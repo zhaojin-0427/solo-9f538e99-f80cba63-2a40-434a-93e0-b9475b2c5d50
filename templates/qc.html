@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>派单核查：{{ annotator }}</title>
+<style>
+  body{font-family:system-ui,"PingFang SC","Microsoft YaHei",sans-serif;
+       max-width:1080px;margin:2rem auto;padding:0 1rem;color:#222}
+  table{border-collapse:collapse;width:100%;margin:.5rem 0}
+  th,td{border:1px solid #ccc;padding:.4rem .6rem;text-align:left}
+  th{background:#f2f2f2}
+  .hint{color:#666;font-size:.9em}
+  .tabs{display:flex;gap:.5rem;margin:1rem 0 .25rem;flex-wrap:wrap}
+  .tabs a{padding:.4rem .9rem;border:1px solid #aaa;text-decoration:none;
+          color:#222;border-radius:4px;background:#f7f7f7}
+  .tabs a.active{background:#2b6cb0;color:#fff;border-color:#2b6cb0}
+  .tabs .badge{font-variant-numeric:tabular-nums}
+  .pager{display:flex;gap:.75rem;align-items:center;margin:.75rem 0}
+  .pager a,.pager span{padding:.3rem .7rem;border:1px solid #aaa;border-radius:4px;
+                       text-decoration:none;color:#222}
+  .pager span.disabled{color:#999;border-color:#ddd;background:#f7f7f7}
+  .nums{font-variant-numeric:tabular-nums}
+  ol.imgcols{columns:5;column-gap:1.5rem;margin:.5rem 0;padding-left:1.4rem}
+  ol.imgcols li{break-inside:avoid;padding:.1rem 0}
+</style>
+</head>
+<body>
+<h1>派单核查：{{ annotator }}</h1>
+
+<p class="hint">
+  派单图数 {{ dispatch_count }}
+  {% if dispatch_version %}（派单 v{{ dispatch_version }}）{% else %}（未派单）{% endif %}
+  ；汇总 {% if summary_version %}v{{ summary_version }}{% else %}无{% endif %}。
+  本页三类总数与图号取自同一已提交状态；图号升序，每页 {{ page_size }} 个。
+</p>
+
+<div class="tabs">
+  {% for cat, name in cat_names.items() %}
+  <a class="{{ 'active' if cat == category else '' }}"
+     href="{{ url_for('qc_view', annotator=annotator, category=cat, page=1) }}">
+    {{ name }} <span class="badge">{{ totals[cat] }}</span>
+  </a>
+  {% endfor %}
+</div>
+
+<h2>{{ cat_names[category] }}（共 {{ totals[category] }} 个）</h2>
+
+{% if images %}
+<ol class="imgcols nums">
+  {% for img in images %}<li>{{ img }}</li>{% endfor %}
+</ol>
+
+<div class="pager">
+  {% if page > 1 %}
+    <a href="{{ url_for('qc_view', annotator=annotator, category=category, page=page-1) }}">上一页</a>
+  {% else %}
+    <span class="disabled">上一页</span>
+  {% endif %}
+  <span>第 {{ page }} / {{ total_pages }} 页</span>
+  {% if page < total_pages %}
+    <a href="{{ url_for('qc_view', annotator=annotator, category=category, page=page+1) }}">下一页</a>
+  {% else %}
+    <span class="disabled">下一页</span>
+  {% endif %}
+</div>
+{% else %}
+<p>该类别下没有图号。</p>
+{% endif %}
+
+<p>
+  <a href="{{ url_for('index') }}">返回首页</a>
+  {% if people|length >= 2 %}
+  ｜切换标注员：
+  {% for p in people if p != annotator %}
+  <a href="{{ url_for('qc_view', annotator=p) }}">{{ p }}</a>{% if not loop.last %}、{% endif %}
+  {% endfor %}
+  {% endif %}
+</p>
+</body>
+</html>
